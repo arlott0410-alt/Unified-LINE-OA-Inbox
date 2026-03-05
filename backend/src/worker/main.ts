@@ -5,10 +5,16 @@ import { processLineEvent } from './processor';
 
 const QUEUE_NAME = 'line-webhook';
 const redisUrl = process.env.REDIS_URL;
+const databaseUrl = process.env.DATABASE_URL;
 if (!redisUrl) {
   console.error('REDIS_URL is not set. Worker requires Redis.');
   process.exit(1);
 }
+if (!databaseUrl) {
+  console.error('DATABASE_URL is not set. Worker requires PostgreSQL.');
+  process.exit(1);
+}
+console.log('Worker: starting (REDIS_URL and DATABASE_URL are set)');
 const connection = new IORedis(redisUrl, {
   maxRetriesPerRequest: null,
   retryStrategy(times) {
