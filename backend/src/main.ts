@@ -38,11 +38,16 @@ async function bootstrap() {
       await instance.register(cookie);
     }, { name: 'fastify-cookie' }),
   );
+  const isCrossOrigin = Boolean(process.env.FRONTEND_URL);
   await app.register(session, {
     secret,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 86400 * 7,
+      // Required for cross-origin: Frontend (unified-line-inbox) and API (unified-line-oa-inbox) on different domains
+      ...(isCrossOrigin && process.env.NODE_ENV === 'production'
+        ? { sameSite: 'none' as const }
+        : {}),
     },
     saveUninitialized: false,
   });
