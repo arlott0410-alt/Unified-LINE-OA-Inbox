@@ -4,11 +4,13 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json .npmrc ./
 ENV NPM_TOKEN=
+RUN node -e "const p=require('./package.json'); delete p.dependencies['@nestjs/prisma']; require('fs').writeFileSync('package.json', JSON.stringify(p,null,2));"
 RUN npm install --omit=dev
 
 FROM base AS builder
 COPY package.json .npmrc ./
 ENV NPM_TOKEN=
+RUN node -e "const p=require('./package.json'); delete p.dependencies['@nestjs/prisma']; require('fs').writeFileSync('package.json', JSON.stringify(p,null,2));"
 RUN npm install
 COPY . .
 RUN npx prisma generate
