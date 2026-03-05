@@ -21,7 +21,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
   ],
   providers: [AuthService, LocalStrategy, SessionSerializer, SessionMiddleware, SessionOrBearerGuard, AdminGuard],
   controllers: [AuthController],
-  exports: [AuthService, AdminGuard, SessionOrBearerGuard],
+  exports: [AuthService, AdminGuard, SessionOrBearerGuard, JwtModule],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
