@@ -1,0 +1,50 @@
+{
+  "name": "unified-line-inbox-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:prod": "node dist/main",
+    "worker": "node dist/worker/main.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "ts-node prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.3.0",
+    "@nestjs/core": "^10.3.0",
+    "@nestjs/platform-fastify": "^10.3.0",
+    "@fastify/session": "^8.3.0",
+    "@fastify/cookie": "^9.0.0",
+    "@nestjs/platform-socket.io": "^10.3.0",
+    "@nestjs/prisma": "^3.0.0",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/passport": "^10.2.0",
+    "@nestjs/websockets": "^10.3.0",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "bcrypt": "^5.1.1",
+    "bullmq": "^5.1.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1",
+    "ioredis": "^5.3.2",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.7.2",
+    "@prisma/client": "^5.8.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.3.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^20.10.0",
+    "@types/passport-local": "^1.0.38",
+    "prisma": "^5.8.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AgentRole {
+  admin
+  agent
+}
+
+enum ConversationStatus {
+  open
+  closed
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+model OaAccount {
+  id                        String   @id @default(uuid())
+  name                      String
+  channelAccessTokenEncrypted String @map("channel_access_token_encrypted")
+  channelSecretEncrypted    String   @map("channel_secret_encrypted")
+  isActive                  Boolean  @default(true) @map("is_active")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  conversations             Conversation[]
+  messages                  Message[]
+  providerEvents            ProviderEvent[]
+}
+
+model Agent {
+  id              String    @id @default(uuid())
+  name            String
+  role            AgentRole
+  passwordHash    String    @map("password_hash")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  assignedThreads InboxThread[]         @relation("AssignedAgent")
+  assignments     ConversationAssignment[] @relation("AssignedAgent")
+  assignedBy      ConversationAssignment[] @relation("AssignedBy")
+  auditLogs       AuditLog[]
+}
+
+model Contact {
+  id         String             @id @default(uuid())
+  displayName String?           @map("display_name")
+  pictureUrl  String?           @map("picture_url")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  identities ContactIdentity[]
+  conversations Conversation[]
+}
+
+model ContactIdentity {
+  id             String   @id @default(uuid())
+  contactId      String   @map("contact_id")
+  contact        Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  provider       String   @default("line")
+  providerUserId String   @map("provider_user_id")
+  oaId           String   @map("oa_id")
+  lastSeenAt     DateTime? @map("last_seen_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  @@unique([oaId, providerUserId])
+  @@map("contact_identities")
+}
+
+model Conversation {
+  id              String             @id @default(uuid())
+  oaId            String             @map("oa_id")
+  oaAccount       OaAccount          @relation(fields: [oaId], references: [id], onDelete: Cascade)
+  contactId       String             @map("contact_id")
+  contact         Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  provider        String             @default("line")
+  providerChatId  String             @map("provider_chat_id")
+  status          ConversationStatus @default(open)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  messages        Message[]
+  assignments     ConversationAssignment[]
+  inboxThread     InboxThread?
+}
+
+model ConversationAssignment {
+  id                 String    @id @default(uuid())
+  conversationId     String    @map("conversation_id")
+  conversation       Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  assignedAgentId    String    @map("assigned_agent_id")
+  assignedAgent      Agent     @relation("AssignedAgent", fields: [assignedAgentId], references: [id], onDelete: Cascade)
+  assignedByAgentId  String?   @map("assigned_by_agent_id")
+  assignedBy         Agent?    @relation("AssignedBy", fields: [assignedByAgentId], references: [id], onDelete: SetNull)
+  assignedAt         DateTime  @default(now()) @map("assigned_at")
+  unassignedAt       DateTime? @map("unassigned_at")
+  @@map("conversation_assignments")
+}
+
+model Message {
+  id               String           @id @default(uuid())
+  oaId             String           @map("oa_id")
+  oaAccount        OaAccount        @relation(fields: [oaId], references: [id], onDelete: Cascade)
+  conversationId   String           @map("conversation_id")
+  conversation     Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction        MessageDirection
+  providerEventId  String?          @map("provider_event_id")
+  providerMessageId String?         @map("provider_message_id")
+  messageType      String           @default("text") @map("message_type")
+  text             String?          @db.Text
+  rawJson          Json?            @map("raw_json")
+  sentAt           DateTime         @map("sent_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  @@index([conversationId, sentAt(sort: Desc)])
+  @@map("messages")
+}
+
+model InboxThread {
+  conversationId          String   @id @map("conversation_id")
+  conversation            Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  oaId                    String   @map("oa_id")
+  assignedAgentId         String?  @map("assigned_agent_id")
+  assignedAgent           Agent?   @relation("AssignedAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  status                  ConversationStatus
+  lastMessageAt           DateTime @map("last_message_at")
+  lastMessagePreview      String?  @map("last_message_preview") @db.Text
+  lastMessageDirection    String?  @map("last_message_direction")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  @@index([assignedAgentId, status, lastMessageAt(sort: Desc)])
+  @@map("inbox_threads")
+}
+
+model ProviderEvent {
+  id              String    @id @default(uuid())
+  oaId            String    @map("oa_id")
+  oaAccount       OaAccount @relation(fields: [oaId], references: [id], onDelete: Cascade)
+  provider        String    @default("line")
+  providerEventId String    @map("provider_event_id")
+  rawJson         Json      @map("raw_json")
+  receivedAt      DateTime  @default(now()) @map("received_at")
+  processedAt     DateTime? @map("processed_at")
+  status          String    @default("pending")
+  @@unique([oaId, providerEventId])
+  @@index([oaId, providerEventId])
+  @@map("provider_events")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorAgentId  String   @map("actor_agent_id")
+  actor         Agent    @relation(fields: [actorAgentId], references: [id], onDelete: Cascade)
+  action        String
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+  metaJson      Json?    @map("meta_json")
+  createdAt     DateTime @default(now()) @map("created_at")
+  @@map("audit_logs")
+}
