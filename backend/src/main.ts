@@ -13,8 +13,9 @@ async function bootstrap() {
   const secret = sessionSecret ?? 'change-me-in-production';
 
   const adapter = new FastifyAdapter();
-  const fastify = adapter.getInstance();
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter);
 
+  const fastify = app.getHttpAdapter().getInstance();
   fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
     const buf = Buffer.isBuffer(body) ? body : Buffer.from(body as string, 'utf8');
     (req as unknown as { rawBody?: Buffer }).rawBody = buf;
@@ -25,9 +26,8 @@ async function bootstrap() {
     }
   });
 
-  // Cookie must be registered before session (single place, correct order for Fastify v4)
-  await fastify.register(cookie);
-  await fastify.register(session, {
+  await app.register(cookie);
+  await app.register(session, {
     secret,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
@@ -36,7 +36,6 @@ async function bootstrap() {
     saveUninitialized: false,
   });
 
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.enableCors({ origin: process.env.FRONTEND_URL ?? '*', credentials: true });
 
