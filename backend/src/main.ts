@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { FastifyInstance } from 'fastify';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import { AppModule } from './app.module';
@@ -28,7 +29,7 @@ async function bootstrap() {
 
   // Session 7.x expects a plugin named 'fastify-cookie'; @fastify/cookie registers under another name, so wrap it.
   await app.register(
-    async (instance) => {
+    async (instance: FastifyInstance) => {
       await instance.register(cookie);
     },
     { name: 'fastify-cookie' },
