@@ -3,11 +3,11 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 FROM base AS builder
 COPY package.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npx prisma generate
 RUN npm run build
@@ -20,4 +20,4 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
 COPY package.json ./
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
