@@ -31,7 +31,7 @@ export class AuthController {
     });
   }
 
-  @Post('me')
+  @Get('me')
   @UseGuards(SessionGuard)
   me(@Req() req: { user: { id: string; name: string; role: string } }) {
     return req.user;
