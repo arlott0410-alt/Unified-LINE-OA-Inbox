@@ -7,22 +7,24 @@ const QUEUE_NAME = 'line-webhook';
 const redisUrl = process.env.REDIS_URL;
 const databaseUrl = process.env.DATABASE_URL;
 if (!redisUrl) {
-  console.error('REDIS_URL is not set. Worker requires Redis.');
+  console.error('REDIS_URL is not set. Worker requires Redis. Set REDIS_URL in Render Environment.');
   process.exit(1);
 }
 if (!databaseUrl) {
-  console.error('DATABASE_URL is not set. Worker requires PostgreSQL.');
+  console.error('DATABASE_URL is not set. Worker requires PostgreSQL. Set DATABASE_URL in Render Environment.');
   process.exit(1);
 }
 console.log('Worker: starting (REDIS_URL and DATABASE_URL are set)');
+
 const connection = new IORedis(redisUrl, {
   maxRetriesPerRequest: null,
   retryStrategy(times) {
-    const delay = Math.min(times * 500, 10000);
+    const delay = Math.min(times * 500, 15000);
     console.log(`Worker: Redis reconnecting in ${delay}ms (attempt ${times})`);
     return delay;
   },
   enableReadyCheck: true,
+  connectTimeout: 10000,
 });
 connection.on('error', (err) => console.error('Redis connection error:', err.message));
 connection.on('connect', () => console.log('Worker: Redis connected'));
