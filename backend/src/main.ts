@@ -18,7 +18,8 @@ async function bootstrap() {
     }
   });
   const secret = process.env.SESSION_SECRET ?? 'change-me-in-production';
-  await fastify.register(fastifyCookie, { name: 'fastify-cookie' } as Record<string, unknown>);
+  // @fastify/session expects plugin named 'fastify-cookie'; type defs don't include 'name', so cast
+  await fastify.register(fastifyCookie, { name: 'fastify-cookie' } as never);
   await fastify.register(fastifySession, {
     secret,
     cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 86400 * 7 },
