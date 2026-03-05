@@ -27,6 +27,6 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
 COPY package.json ./
 
-# Render sets PORT (default 10000). Bind to 0.0.0.0 is done in application.
-EXPOSE 3001
+# Render sets PORT; app listens on process.env.PORT and 0.0.0.0
+EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
