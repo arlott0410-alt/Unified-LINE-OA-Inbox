@@ -16,7 +16,8 @@ import {
 } from '@/lib/api';
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+// Socket.IO connects to backend. With same-origin proxy, auth uses frontend; for realtime set NEXT_PUBLIC_API_URL to backend public URL, or leave empty to try origin (no socket server on frontend).
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export default function ConversationPage() {
   const params = useParams();
@@ -51,7 +52,7 @@ export default function ConversationPage() {
     let mounted = true;
     getSocketToken().then((token) => {
       if (!mounted) return;
-      const socket = io(API_URL || window.location.origin, {
+      const socket = io(SOCKET_URL || window.location.origin, {
         path: '/socket.io',
         auth: { token },
       });

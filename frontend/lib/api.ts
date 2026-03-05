@@ -1,53 +1,19 @@
-const BUILD_TIME_API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
-let runtimeApiUrl: string | null = null;
-
-const ACCESS_TOKEN_KEY = 'unified_line_inbox_access_token';
-
-function getAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function setAccessToken(token: string): void {
-  if (typeof window !== 'undefined') localStorage.setItem(ACCESS_TOKEN_KEY, token);
-}
-
-function clearAccessToken(): void {
-  if (typeof window !== 'undefined') localStorage.removeItem(ACCESS_TOKEN_KEY);
-}
-
-async function getApiBaseUrl(): Promise<string> {
-  if (BUILD_TIME_API_URL) return BUILD_TIME_API_URL;
-  if (runtimeApiUrl !== null) return runtimeApiUrl;
-  const res = await fetch('/api/config', { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('API config unavailable. Set NEXT_PUBLIC_API_URL for the frontend.');
-  }
-  const data = (await res.json()) as { apiUrl?: string };
-  runtimeApiUrl = data.apiUrl ?? '';
-  if (!runtimeApiUrl) {
-    throw new Error('API URL not configured. Set NEXT_PUBLIC_API_URL for the frontend.');
-  }
-  return runtimeApiUrl;
-}
+/**
+ * API client: all requests go to same-origin /api/* (Next.js proxy to backend).
+ * No cross-domain; cookies are first-party. credentials: 'include' sends session cookie.
+ */
 
 export async function api<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
-  const base = await getApiBaseUrl();
-  const token = getAccessToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(init?.headers as Record<string, string>) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${base}${path}`, {
+  const res = await fetch(path, {
     ...init,
     credentials: 'include',
     headers,
   });
-  if (res.status === 401) {
-    clearAccessToken();
-    throw new Error('Unauthorized');
-  }
+  if (res.status === 401) throw new Error('Unauthorized');
   if (!res.ok) {
     const body = await res.text().catch(() => res.statusText);
     const isHtml = body.trimStart().startsWith('<');
@@ -69,20 +35,14 @@ export async function me(): Promise<User | null> {
 }
 
 export async function login(name: string, password: string) {
-  const data = await api<{ ok: boolean; user: User; accessToken?: string }>('/api/auth/login', {
+  return api<{ ok: boolean; user: User }>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ name, password }),
   });
-  if (data.accessToken) setAccessToken(data.accessToken);
-  return data;
 }
 
 export async function logout() {
-  try {
-    await api('/api/auth/logout', { method: 'POST' });
-  } finally {
-    clearAccessToken();
-  }
+  await api('/api/auth/logout', { method: 'POST' });
 }
 
 export async function getSocketToken(): Promise<string> {

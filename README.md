@@ -40,7 +40,8 @@ If you run migrations inside the API container, add a startup script that runs `
 | `SESSION_SECRET` | Yes | Secret for session signing (e.g. long random string) |
 | `ENCRYPTION_KEY` | Yes | AES-256-GCM key (e.g. 32+ character secret) |
 | `PORT` | No | Render sets this (default `10000`). App binds to `0.0.0.0:PORT`. |
-| `FRONTEND_URL` | No | Allowed CORS origin for frontend (e.g. `https://your-app.onrender.com`) |
+
+Browser does not call the API directly; the Next.js frontend proxies `/api/*` to the backend via Private Network, so CORS for the browser is not needed.
 
 **Worker (same codebase as backend, different CMD)**
 
@@ -49,11 +50,11 @@ If you run migrations inside the API container, add a startup script that runs `
 | `DATABASE_URL` | Yes | Same PostgreSQL URL |
 | `REDIS_URL` | Yes | Same Redis URL |
 
-**Frontend**
+**Frontend (same-origin proxy)**
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_API_URL` | Yes | Full API URL (e.g. `https://your-api.onrender.com`) |
+| `INTERNAL_API_URL` | Yes | Backend URL via Private Network (e.g. `http://unified-line-oa-inbox:10000`). The Next.js server proxies all `/api/*` requests to this URL; the browser only talks to the frontend domain, so session cookies are first-party. |
 
 ### 4. Build and run with Docker
 
@@ -82,7 +83,7 @@ If you run migrations inside the API container, add a startup script that runs `
 
 - **Web Service (API)**: Connect repo, root directory `backend`, Dockerfile path `backend/Dockerfile`. Set env vars; add start command if you run migrations on boot: `npx prisma migrate deploy && node dist/main.js`.
 - **Background Worker**: Same repo, root `backend`, Dockerfile path `backend/Dockerfile.worker`. Same `DATABASE_URL` and `REDIS_URL`.
-- **Web Service (Frontend)**: Root `frontend`, Dockerfile `frontend/Dockerfile`. Set `NEXT_PUBLIC_API_URL` to your API URL.
+- **Web Service (Frontend)**: Root `frontend`, Dockerfile `frontend/Dockerfile`. Set `INTERNAL_API_URL` to your API’s Private Network URL (e.g. `http://<api-service-name>:10000`).
 
 ### 6. Seed first admin (optional)
 
