@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true
   },
-  "exclude": ["node_modules", "dist", "src/worker"]
+  "exclude": ["node_modules", "dist", "src/worker", "prisma"]
 }
