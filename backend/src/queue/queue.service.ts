@@ -11,7 +11,7 @@ export class QueueService implements OnModuleDestroy, OnModuleInit {
 
   constructor() {
     this.queue = new Queue(QUEUE_NAME, {
-      connection,
+      connection: connection as any,
       defaultJobOptions: { removeOnComplete: 100 },
     });
   }

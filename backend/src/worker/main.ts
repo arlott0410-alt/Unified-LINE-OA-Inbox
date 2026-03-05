@@ -24,7 +24,7 @@ const worker = new Worker(
     const { oaId, providerEventId } = job.data;
     await processLineEvent(oaId, providerEventId);
   },
-  { connection, concurrency: 5 },
+  { connection: connection as any, concurrency: 5 },
 );
 
 worker.on('completed', () => {});

@@ -15,7 +15,7 @@ export async function processLineEvent(oaId: string, providerEventId: string) {
     where: { oaId_providerEventId: { oaId, providerEventId } },
   });
   if (!ev || ev.status === 'processed') return;
-  const raw = ev.rawJson as LineWebhookEvent;
+  const raw = ev.rawJson as unknown as LineWebhookEvent;
   if (raw.type !== 'message' || raw.message?.type !== 'text') {
     await prisma.providerEvent.update({
       where: { id: ev.id },
@@ -90,7 +90,7 @@ export async function processLineEvent(oaId: string, providerEventId: string) {
       providerMessageId: messageId ?? null,
       messageType: 'text',
       text,
-      rawJson: raw as object,
+      rawJson: raw as unknown as object,
       sentAt,
     },
   });
