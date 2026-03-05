@@ -5,8 +5,14 @@ async function getApiBaseUrl(): Promise<string> {
   if (BUILD_TIME_API_URL) return BUILD_TIME_API_URL;
   if (runtimeApiUrl !== null) return runtimeApiUrl;
   const res = await fetch('/api/config', { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error('API config unavailable. Set NEXT_PUBLIC_API_URL for the frontend.');
+  }
   const data = (await res.json()) as { apiUrl?: string };
   runtimeApiUrl = data.apiUrl ?? '';
+  if (!runtimeApiUrl) {
+    throw new Error('API URL not configured. Set NEXT_PUBLIC_API_URL for the frontend.');
+  }
   return runtimeApiUrl;
 }
 
@@ -21,7 +27,11 @@ export async function api<T>(
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
   if (res.status === 401) throw new Error('Unauthorized');
-  if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+  if (!res.ok) {
+    const body = await res.text().catch(() => res.statusText);
+    const isHtml = body.trimStart().startsWith('<');
+    throw new Error(isHtml ? `Request failed (${res.status})` : body || `Request failed (${res.status})`);
+  }
   if (res.status === 204 || res.headers.get('content-length') === '0')
     return undefined as T;
   return res.json();
