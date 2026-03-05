@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import type { FastifyInstance } from 'fastify';
+import fp from 'fastify-plugin';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import { AppModule } from './app.module';
@@ -27,12 +28,11 @@ async function bootstrap() {
     }
   });
 
-  // Session 7.x expects a plugin named 'fastify-cookie'; @fastify/cookie registers under another name, so wrap it.
+  // Session 7.x expects a plugin named 'fastify-cookie'; wrap @fastify/cookie with fastify-plugin so the name is in metadata.
   await app.register(
-    async (instance: FastifyInstance) => {
+    fp(async (instance: FastifyInstance) => {
       await instance.register(cookie);
-    },
-    { name: 'fastify-cookie' },
+    }, { name: 'fastify-cookie' }),
   );
   await app.register(session, {
     secret,
