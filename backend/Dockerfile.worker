@@ -2,11 +2,13 @@ FROM node:20-alpine AS base
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json ./
+COPY package.json .npmrc ./
+ENV NPM_TOKEN=
 RUN npm install --omit=dev
 
 FROM base AS builder
-COPY package.json ./
+COPY package.json .npmrc ./
+ENV NPM_TOKEN=
 RUN npm install
 COPY . .
 RUN npx prisma generate
