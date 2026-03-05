@@ -1,10 +1,21 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+const BUILD_TIME_API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+let runtimeApiUrl: string | null = null;
+
+async function getApiBaseUrl(): Promise<string> {
+  if (BUILD_TIME_API_URL) return BUILD_TIME_API_URL;
+  if (runtimeApiUrl !== null) return runtimeApiUrl;
+  const res = await fetch('/api/config', { cache: 'no-store' });
+  const data = (await res.json()) as { apiUrl?: string };
+  runtimeApiUrl = data.apiUrl ?? '';
+  return runtimeApiUrl;
+}
 
 export async function api<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const base = await getApiBaseUrl();
+  const res = await fetch(`${base}${path}`, {
     ...init,
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...init?.headers },
