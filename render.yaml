@@ -1,0 +1,40 @@
+# Render Blueprint - Unified LINE OA Inbox
+# https://render.com/docs/blueprint-spec
+# Deploy: connect repo, then create PostgreSQL + Key Value (Redis) and set env vars on services.
+
+services:
+  - type: web
+    name: unified-line-inbox-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: line_inbox_db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+    # Set REDIS_URL in Dashboard to your Key Value internal URL
+
+  - type: worker
+    name: unified-line-inbox-worker
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.worker
+    dockerContext: ./backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: line_inbox_db
+          property: connectionString
+    # Set REDIS_URL in Dashboard to your Key Value internal URL
+
+databases:
+  - name: line_inbox_db
+    plan: free

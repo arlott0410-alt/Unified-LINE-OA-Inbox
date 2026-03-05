@@ -39,7 +39,7 @@ If you run migrations inside the API container, add a startup script that runs `
 | `REDIS_URL` | Yes | Redis connection URL |
 | `SESSION_SECRET` | Yes | Secret for session signing (e.g. long random string) |
 | `ENCRYPTION_KEY` | Yes | AES-256-GCM key (e.g. 32+ character secret) |
-| `PORT` | No | Default `3001` |
+| `PORT` | No | Render sets this (default `10000`). App binds to `0.0.0.0:PORT`. |
 | `FRONTEND_URL` | No | Allowed CORS origin for frontend (e.g. `https://your-app.onrender.com`) |
 
 **Worker (same codebase as backend, different CMD)**

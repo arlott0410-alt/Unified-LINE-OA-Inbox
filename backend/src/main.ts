@@ -26,7 +26,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.enableCors({ origin: process.env.FRONTEND_URL ?? '*', credentials: true });
-  const port = parseInt(process.env.PORT ?? '3001', 10);
+  const port = parseInt(process.env.PORT || '10000', 10);
   await app.listen(port, '0.0.0.0');
 }
 
