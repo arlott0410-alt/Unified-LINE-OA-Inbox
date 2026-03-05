@@ -38,22 +38,28 @@ async function bootstrap() {
       await instance.register(cookie);
     }, { name: 'fastify-cookie' }),
   );
-  const isCrossOrigin = Boolean(process.env.FRONTEND_URL);
+  const isProduction = process.env.NODE_ENV === 'production';
+  // Cross-domain session cookies: when FE and API are on different origins (e.g. Render),
+  // the browser only sends the cookie if sameSite is 'none'. With sameSite 'lax' or 'strict'
+  // the cookie is not sent on cross-origin fetch(), so GET /api/auth/me returns 401.
   await app.register(session, {
     secret,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      path: '/',
       maxAge: 86400 * 7,
-      // Required for cross-origin: Frontend (unified-line-inbox) and API (unified-line-oa-inbox) on different domains
-      ...(isCrossOrigin && process.env.NODE_ENV === 'production'
-        ? { sameSite: 'none' as const }
-        : {}),
     },
     saveUninitialized: false,
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  app.enableCors({ origin: process.env.FRONTEND_URL ?? '*', credentials: true });
+  // When credentials: true, origin cannot be '*'. Use explicit FRONTEND_URL or disable CORS.
+  app.enableCors({
+    origin: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : false,
+    credentials: true,
+  });
 
   const port = Number(process.env.PORT || 3001);
   await app.listen(port, '0.0.0.0');
