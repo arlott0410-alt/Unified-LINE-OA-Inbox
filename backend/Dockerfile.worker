@@ -15,7 +15,7 @@ RUN node -e "const p=require('./package.json'); delete p.dependencies['@nestjs/p
 RUN npm install
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && npx tsc -p tsconfig.worker.json
 
 FROM base AS runner
 ENV NODE_ENV=production
