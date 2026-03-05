@@ -1,22 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { login } from '@/lib/api';
 
 export default function LoginPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     try {
       await login(name, password);
-      router.push('/inbox');
-      router.refresh();
+      window.location.href = '/inbox';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     }
