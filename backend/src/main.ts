@@ -26,7 +26,13 @@ async function bootstrap() {
     }
   });
 
-  await app.register(cookie);
+  // Session 7.x expects a plugin named 'fastify-cookie'; @fastify/cookie registers under another name, so wrap it.
+  await app.register(
+    async (instance) => {
+      await instance.register(cookie);
+    },
+    { name: 'fastify-cookie' },
+  );
   await app.register(session, {
     secret,
     cookie: {
