@@ -18,7 +18,7 @@ async function bootstrap() {
     }
   });
   const secret = process.env.SESSION_SECRET ?? 'change-me-in-production';
-  await fastify.register(fastifyCookie);
+  await fastify.register(fastifyCookie, { name: 'fastify-cookie' });
   await fastify.register(fastifySession, {
     secret,
     cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 86400 * 7 },
