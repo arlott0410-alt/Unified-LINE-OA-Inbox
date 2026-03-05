@@ -7,5 +7,6 @@
     "strictNullChecks": false,
     "noImplicitAny": false
   },
-  "include": ["src/worker/**/*", "src/common/**/*"]
+  "include": ["src/worker/**/*", "src/common/**/*"],
+  "exclude": ["node_modules", "dist", "prisma"]
 }
