@@ -1,12 +1,12 @@
 import { Body, Controller, Param, Post, Get, UseGuards } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
-import { SessionGuard } from '../auth/session.guard';
+import { SessionOrBearerGuard } from '../auth/session-or-bearer.guard';
 import { AdminGuard } from '../auth/admin.guard';
 import { Req } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 
 @Controller('api/conversations')
-@UseGuards(SessionGuard)
+@UseGuards(SessionOrBearerGuard)
 export class ConversationController {
   constructor(
     private conversation: ConversationService,

@@ -1,6 +1,21 @@
 const BUILD_TIME_API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 let runtimeApiUrl: string | null = null;
 
+const ACCESS_TOKEN_KEY = 'unified_line_inbox_access_token';
+
+function getAccessToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+export function setAccessToken(token: string): void {
+  if (typeof window !== 'undefined') localStorage.setItem(ACCESS_TOKEN_KEY, token);
+}
+
+function clearAccessToken(): void {
+  if (typeof window !== 'undefined') localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
 async function getApiBaseUrl(): Promise<string> {
   if (BUILD_TIME_API_URL) return BUILD_TIME_API_URL;
   if (runtimeApiUrl !== null) return runtimeApiUrl;
@@ -21,12 +36,18 @@ export async function api<T>(
   init?: RequestInit
 ): Promise<T> {
   const base = await getApiBaseUrl();
+  const token = getAccessToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(init?.headers as Record<string, string>) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${base}${path}`, {
     ...init,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers,
   });
-  if (res.status === 401) throw new Error('Unauthorized');
+  if (res.status === 401) {
+    clearAccessToken();
+    throw new Error('Unauthorized');
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => res.statusText);
     const isHtml = body.trimStart().startsWith('<');
@@ -48,14 +69,20 @@ export async function me(): Promise<User | null> {
 }
 
 export async function login(name: string, password: string) {
-  return api<{ ok: boolean; user: User }>('/api/auth/login', {
+  const data = await api<{ ok: boolean; user: User; accessToken?: string }>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ name, password }),
   });
+  if (data.accessToken) setAccessToken(data.accessToken);
+  return data;
 }
 
 export async function logout() {
-  await api('/api/auth/logout', { method: 'POST' });
+  try {
+    await api('/api/auth/logout', { method: 'POST' });
+  } finally {
+    clearAccessToken();
+  }
 }
 
 export async function getSocketToken(): Promise<string> {

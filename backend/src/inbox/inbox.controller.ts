@@ -1,11 +1,11 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { InboxService } from './inbox.service';
-import { SessionGuard } from '../auth/session.guard';
+import { SessionOrBearerGuard } from '../auth/session-or-bearer.guard';
 import { Req } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 
 @Controller('api/inbox')
-@UseGuards(SessionGuard)
+@UseGuards(SessionOrBearerGuard)
 export class InboxController {
   constructor(
     private inbox: InboxService,

@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { SessionGuard } from './session.guard';
+import { SessionOrBearerGuard } from './session-or-bearer.guard';
 import { SocketTokenService } from '../realtime/socket-token.service';
 
 @Controller('api/auth')
 export class AuthController {
   constructor(
     private auth: AuthService,
+    private jwt: JwtService,
     private socketToken: SocketTokenService,
   ) {}
 
@@ -20,25 +22,28 @@ export class AuthController {
     },
   ) {
     req.session.userId = req.user.id;
-    return { ok: true, user: req.user };
+    const accessToken = this.jwt.sign({ sub: req.user.id });
+    return { ok: true, user: req.user, accessToken };
   }
 
   @Post('logout')
-  @UseGuards(SessionGuard)
-  async logout(@Req() req: { session: { destroy: (cb: (err?: Error) => void) => void } }) {
-    return new Promise<void>((resolve, reject) => {
-      req.session.destroy((err) => (err ? reject(err) : resolve()));
-    });
+  @UseGuards(SessionOrBearerGuard)
+  async logout(@Req() req: { session?: { destroy?: (cb: (err?: Error) => void) => void } }) {
+    if (req.session?.destroy) {
+      return new Promise<void>((resolve, reject) => {
+        req.session!.destroy!((err) => (err ? reject(err) : resolve()));
+      });
+    }
   }
 
   @Get('me')
-  @UseGuards(SessionGuard)
+  @UseGuards(SessionOrBearerGuard)
   me(@Req() req: { user: { id: string; name: string; role: string } }) {
     return req.user;
   }
 
   @Get('socket-token')
-  @UseGuards(SessionGuard)
+  @UseGuards(SessionOrBearerGuard)
   getSocketToken(@Req() req: { user: { id: string } }) {
     return { token: this.socketToken.generate(req.user.id) };
   }

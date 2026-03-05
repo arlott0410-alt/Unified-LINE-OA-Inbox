@@ -1,9 +1,9 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { SessionGuard } from '../auth/session.guard';
+import { SessionOrBearerGuard } from '../auth/session-or-bearer.guard';
 
 @Controller('api/agents')
-@UseGuards(SessionGuard)
+@UseGuards(SessionOrBearerGuard)
 export class AgentsController {
   constructor(private prisma: PrismaService) {}
 
