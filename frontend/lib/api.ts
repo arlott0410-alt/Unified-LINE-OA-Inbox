@@ -13,7 +13,17 @@ export async function api<T>(
     credentials: 'include',
     headers,
   });
-  if (res.status === 401) throw new Error('Unauthorized');
+  if (res.status === 401) {
+    const text = await res.text().catch(() => '');
+    try {
+      const json = JSON.parse(text) as { message?: string };
+      if (typeof json?.message === 'string') throw new Error(json.message);
+    } catch (e) {
+      if (e instanceof SyntaxError) { /* use default */ }
+      else if (e instanceof Error) throw e;
+    }
+    throw new Error('Unauthorized');
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => res.statusText);
     const isHtml = body.trimStart().startsWith('<');

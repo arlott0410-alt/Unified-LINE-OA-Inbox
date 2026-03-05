@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * Example: INTERNAL_API_URL = 'http://unified-line-oa-inbox:10000'
  */
 
-const SKIP_HEADERS = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding']);
+const SKIP_HEADERS = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding', 'content-length']);
 const COOKIE_HEADER = 'cookie';
 const SET_COOKIE_HEADER = 'set-cookie';
 
@@ -81,12 +81,24 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
       body = undefined;
     }
   }
+  if (body !== undefined && body !== '' && request.method !== 'GET' && request.method !== 'HEAD') {
+    headers.set('Content-Type', 'application/json');
+  }
 
-  const backendResponse = await fetch(backendUrl, {
-    method: request.method,
-    headers,
-    body: body ?? undefined,
-  });
+  let backendResponse: Response;
+  try {
+    backendResponse = await fetch(backendUrl, {
+      method: request.method,
+      headers,
+      body: body ?? undefined,
+    });
+  } catch (fetchErr) {
+    const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+    return NextResponse.json(
+      { error: 'Backend unreachable', details: errMsg },
+      { status: 502 }
+    );
+  }
 
   const responseHeaders = new Headers();
   backendResponse.headers.forEach((value, key) => {
@@ -95,9 +107,18 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     responseHeaders.set(key, value);
   });
 
-  const setCookies = backendResponse.headers.getSetCookie?.() ?? [];
-  for (const c of setCookies) {
-    responseHeaders.append(SET_COOKIE_HEADER, rewriteSetCookieForFrontend(c));
+  const setCookies =
+    (typeof backendResponse.headers.getSetCookie === 'function'
+      ? backendResponse.headers.getSetCookie()
+      : null) ?? [];
+  const cookieStrings =
+    setCookies.length > 0
+      ? setCookies
+      : backendResponse.headers.get(SET_COOKIE_HEADER)
+        ? [backendResponse.headers.get(SET_COOKIE_HEADER)!]
+        : [];
+  for (const c of cookieStrings) {
+    if (c) responseHeaders.append(SET_COOKIE_HEADER, rewriteSetCookieForFrontend(c));
   }
 
   const responseBody = backendResponse.body;
