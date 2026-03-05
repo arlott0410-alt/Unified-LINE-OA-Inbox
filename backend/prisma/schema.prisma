@@ -46,6 +46,7 @@ model Agent {
   assignments     ConversationAssignment[] @relation("AssignedAgent")
   assignedBy      ConversationAssignment[] @relation("AssignedBy")
   auditLogs       AuditLog[]
+  @@map("agents")
 }
 
 model Contact {
