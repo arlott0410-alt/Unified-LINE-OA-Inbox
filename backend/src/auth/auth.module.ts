@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { LocalStrategy } from './local.strategy';
 import { SessionSerializer } from './session.serializer';
 import { SessionMiddleware } from './session.middleware';
+import { AdminGuard } from './admin.guard';
 import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({

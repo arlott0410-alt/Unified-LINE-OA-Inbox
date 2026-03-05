@@ -8,9 +8,10 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const adapter = new FastifyAdapter();
   adapter.getInstance().addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
-    (req as unknown as { rawBody?: Buffer }).rawBody = body;
+    const buf = Buffer.isBuffer(body) ? body : Buffer.from(body as string, 'utf8');
+    (req as unknown as { rawBody?: Buffer }).rawBody = buf;
     try {
-      done(null, JSON.parse(body.toString('utf8')));
+      done(null, JSON.parse(buf.toString('utf8')));
     } catch {
       done(null, {});
     }

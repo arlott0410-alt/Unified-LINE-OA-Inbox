@@ -39,7 +39,7 @@ export class AuthController {
 
   @Get('socket-token')
   @UseGuards(SessionGuard)
-  socketToken(@Req() req: { user: { id: string } }) {
+  getSocketToken(@Req() req: { user: { id: string } }) {
     return { token: this.socketToken.generate(req.user.id) };
   }
 }
