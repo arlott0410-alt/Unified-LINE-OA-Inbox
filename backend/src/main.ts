@@ -25,14 +25,8 @@ async function bootstrap() {
     }
   });
 
-  // Cookie must be registered before session. @fastify/session expects a plugin named 'fastify-cookie';
-  // @fastify/cookie registers under a different name, so wrap it with that name.
-  await fastify.register(
-    async (instance) => {
-      await instance.register(cookie);
-    },
-    { name: 'fastify-cookie' },
-  );
+  // Cookie must be registered before session (single place, correct order for Fastify v4)
+  await fastify.register(cookie);
   await fastify.register(session, {
     secret,
     cookie: {
@@ -46,7 +40,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.enableCors({ origin: process.env.FRONTEND_URL ?? '*', credentials: true });
 
-  const port = Number(process.env.PORT || 3000);
+  const port = Number(process.env.PORT || 3001);
   await app.listen(port, '0.0.0.0');
   console.log(`Listening on 0.0.0.0:${port}`);
 }
