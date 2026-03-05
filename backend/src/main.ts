@@ -1,3 +1,4 @@
+import { Readable } from 'stream';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -18,14 +19,17 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter);
 
   const fastify = app.getHttpAdapter().getInstance();
-  fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
-    const buf = Buffer.isBuffer(body) ? body : Buffer.from(body as string, 'utf8');
-    (req as unknown as { rawBody?: Buffer }).rawBody = buf;
-    try {
-      done(null, JSON.parse(buf.toString('utf8')));
-    } catch {
-      done(null, {});
-    }
+  // Capture raw body for LINE webhook signature verification only; do not add a second 'application/json' parser
+  // (Nest registers its own during init(), so we use preParsing to buffer and attach rawBody for the webhook path).
+  fastify.addHook('preParsing', async (request, _reply, payload) => {
+    const url = request.url;
+    const isJson = request.headers['content-type']?.includes('application/json');
+    if (!url.startsWith('/api/webhooks/line') || !isJson) return payload;
+    const chunks: Buffer[] = [];
+    for await (const chunk of payload) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buf = Buffer.concat(chunks);
+    (request as unknown as { rawBody?: Buffer }).rawBody = buf;
+    return Readable.from(buf);
   });
 
   // Session 7.x expects a plugin named 'fastify-cookie'; wrap @fastify/cookie with fastify-plugin so the name is in metadata.
